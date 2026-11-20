@@ -8,7 +8,18 @@
 
 Built for **TBO VoyageHack 4.0** (Inventory Optimization problem) by Bhumi Khandelwal, Astha Singh and Adarsh Singh, IIM Lucknow.
 
-**Live demo:** https://adarshdgr8.github.io/buy-block-pass/
+**Live site:** https://adarshdgr8.github.io/buy-block-pass/
+
+The site has two parts:
+
+- **The story** (`index.html`): a 90-second animated walk-through of the problem, the trap in prepaying the hottest weeks, the three contracts, how the engine decides, the results and the plan. Press **Play** for autoplay (handy for screen-recording).
+- **The engine** (`app.html`): the working prototype. Set the cash budget and risk appetite and the engine re-plans live in your browser. Views:
+  - **Overview**: the plan in one sentence, KPIs, and a comparison with the naive plan.
+  - **Plan**: every market and week; open a destination to see its hotels, then click a week for the reasoning and a 600-outcome demand chart.
+  - **Contracts**: the negotiation brief, with filters, CSV export, and a drafted supplier message for each deal.
+  - **Release radar**: pickup against forecast and how many allotment rooms to hand back at T-14.
+  - **Stress lab**: force a Gulf or Europe shock into every scenario and compare the two plans.
+  - **Method**: assumptions and limits.
 
 > All data in this prototype is synthetic. Nothing here uses TBO data or forecasts TBO's results. The point is to show the method and the decisions it produces.
 
@@ -65,11 +76,14 @@ The engine also stops spending when more commitment doesn't pay. With a ₹100 C
 
 ## Run it
 
-No build step and no dependencies. Open `index.html` in a browser, or serve the folder:
+No build step and no dependencies. Serve the folder and open it:
 
 ```
 python3 -m http.server 8000
+# then open http://localhost:8000/
 ```
+
+Opening `app.html` straight from disk also works; the engine then runs on the main thread instead of a web worker.
 
 To reproduce the results table:
 
@@ -80,8 +94,10 @@ node -e "const B=require('./engine.js');const w=B.buildWorld(42);const r=B.optim
 ## Files
 
 - `engine.js`: synthetic market, scenario model, allocator, naive comparator, stress test
-- `app.js`: the interface (plain JavaScript, SVG charts)
-- `index.html`: page and styles
+- `worker.js`: runs the engine off the main thread and reports progress
+- `app.html`, `app.js`, `app.css`: the engine's interface
+- `index.html`, `story.js`, `story.css`: the animated story
+- `story-data.js`: numbers for the story, generated from `engine.js` by `node tools/make-story-data.js` (seed 42, ₹50 Cr, Balanced)
 
 ## Roadmap (Round 2)
 

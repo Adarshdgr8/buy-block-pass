@@ -306,6 +306,7 @@
       if (pct(trialWo, 0.95) > woLimit) { blocked[top.i][top.type] = true; continue; }
       total.set(trial); totWo.set(trialWo);
       capital += top.dCap;
+      if (opts.onProgress && guard % 40 === 0) opts.onProgress(capital / budgetRs, guard);
       ps.H = top.H; ps.K = top.K; ps.vec = top.v;
       best[top.i] = { H: cand(top.i, 'H'), K: cand(top.i, 'K') };
     }

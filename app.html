@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventory desk · Buy, Block or Pass</title>
+<meta name="description" content="Working prototype: plan which hotel rooms and flight seats TBO should prepay, block or leave on free sale for Summer 2027. Synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="index.html"><span class="b">Buy</span>, <span class="k">Block</span> <span class="p">or Pass</span></a>
+    <p class="sub">Inventory desk · prototype</p>
+    <nav id="nav">
+      <a data-v="overview" class="on"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-18v6h8V3z"/></svg>Overview</a>
+      <a data-v="plan"><svg viewBox="0 0 24 24"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>Plan</a>
+      <a data-v="contracts"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6zm8 1.5V8h4.5M9 12h8M9 16h8M9 8h3"/></svg>Contracts</a>
+      <a data-v="radar"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-8-8zm0 4a6 6 0 1 0 6 6h-2a4 4 0 1 1-4-4zm0 4a2 2 0 1 0 2 2l7-7-1.4-1.4L12.6 10A2 2 0 0 0 12 10"/></svg>Release radar</a>
+      <a data-v="stress"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Stress lab</a>
+      <a data-v="method"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>Method</a>
+    </nav>
+    <div class="side-foot">
+      <a href="index.html">← Watch the story</a>
+      <a href="https://github.com/Adarshdgr8/buy-block-pass">Code on GitHub</a>
+      <p>Synthetic data. Every figure is illustrative.</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="bar">
+      <div class="season"><span class="dot"></span>Summer 2027 · Apr to Jun · 10 destinations, 40 hotels, 10 flight routes</div>
+      <div class="controls">
+        <label class="ctl"><span>Cash budget <b id="budgetOut">₹50 Cr</b></span><input id="budget" type="range" min="10" max="100" step="5" value="50"></label>
+        <div class="ctl"><span>Risk appetite</span>
+          <div class="seg" id="risk"><button data-v="cautious">Cautious</button><button data-v="balanced" class="on">Balanced</button><button data-v="bold">Bold</button></div>
+        </div>
+      </div>
+    </header>
+    <div class="runner" id="runner" aria-live="polite">
+      <div class="runbar"><i id="runFill"></i></div>
+      <span id="runText">Starting the engine…</span>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="view on" id="v-overview">
+      <div class="headline card glowcard">
+        <p class="eyebrow">This quarter’s plan</p>
+        <h1 id="headline">Working out the plan…</h1>
+        <p class="hsub" id="hsub"></p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2">
+        <div class="card"><h2>Same budget, two ways to spend it</h2><p class="hint">Our plan against prepaying 60% of demand in the hottest, most sold-out weeks until the budget runs out. Measured as extra gross profit over staying on free sale.</p><div id="compare"></div></div>
+        <div class="card"><h2>Where the cash goes</h2><p class="hint">Cash committed by lane, and the patterns the engine found.</p><div id="split"></div><div id="insights"></div></div>
+      </div>
+      <div class="card"><div class="cardhead"><div><h2>Plan at a glance</h2><p class="hint">Main decision per market and week. Open the Plan view for every hotel.</p></div><button class="btn" data-goto="plan">Open plan →</button></div><div class="map mini" id="miniMap"></div></div>
+    </section>
+
+    <!-- PLAN -->
+    <section class="view" id="v-plan">
+      <div class="viewhead"><div><h1>Plan</h1><p class="hint">Click a destination to see its 4 hotels. Click any week for the reasoning behind it.</p></div>
+        <div class="seg" id="planFilter"><button data-f="all" class="on">All</button><button data-f="hotel">Hotels</button><button data-f="flight">Flights</button></div></div>
+      <div class="card"><div class="legend"><span><i class="lane-buy"></i>Buy · prepay</span><span><i class="lane-block"></i>Block · allotment, hand back at T-14</span><span><i class="lane-pass"></i>Pass · free sale</span><span class="mixnote"><i class="mixdot"></i>Prepaid base with an allotment on top</span></div>
+        <div class="map" id="planMap"></div></div>
+    </section>
+
+    <!-- CONTRACTS -->
+    <section class="view" id="v-contracts">
+      <div class="viewhead"><div><h1>Contracts</h1><p class="hint">The negotiation brief for the contracting team, ranked by expected extra gross profit. Draft a message to any supplier.</p></div>
+        <div class="tools"><input id="search" type="search" placeholder="Search hotel, city or route"><div class="seg" id="laneFilter"><button data-f="all" class="on">All</button><button data-f="buy">Buy</button><button data-f="block">Block</button></div><button class="btn" id="csv">Download CSV</button></div></div>
+      <div class="card"><div class="tbl-wrap"><table id="tbl"></table></div><p class="hint" id="tblNote"></p></div>
+    </section>
+
+    <!-- RADAR -->
+    <section class="view" id="v-radar">
+      <div class="viewhead"><div><h1>Release radar</h1><p class="hint">After signing, pickup is tracked against forecast. Before each release date the engine says how many allotment rooms to keep and how many to hand back.</p></div></div>
+      <div class="radar">
+        <div class="card list" id="radarList"></div>
+        <div class="card"><h2 id="radarTitle"></h2><div id="radarChart"></div><p class="radarnote" id="radarNote"></p></div>
+      </div>
+    </section>
+
+    <!-- STRESS -->
+    <section class="view" id="v-stress">
+      <div class="viewhead"><div><h1>Stress lab</h1><p class="hint">Force a regional shock into every scenario and see how each plan holds up. Shock sizes echo the October 2026 cancellations TBO reported.</p></div>
+        <div class="seg" id="shock"><button data-v="Gulf" class="on">Gulf disruption</button><button data-v="Europe">Europe unrest</button></div></div>
+      <div class="grid2">
+        <div class="card"><h2 id="stressTitle"></h2><p class="hint" id="stressHint"></p><div id="stressBars"></div></div>
+        <div class="card"><h2>Exposure by region</h2><p class="hint" id="regionHint">Cash each plan commits per region.</p><div id="regionBars"></div></div>
+      </div>
+    </section>
+
+    <!-- METHOD -->
+    <section class="view" id="v-method">
+      <div class="viewhead"><div><h1>Method</h1><p class="hint">How the engine works, what it assumes, and what is still to build.</p></div></div>
+      <div class="steps4">
+        <div class="card step"><span class="n">1</span><h3>Sense</h3><p>Bookings, searches, sold-out searches (unmet demand), look-to-book, cancellations, plus events, visas, airfares and risk news.</p></div>
+        <div class="card step"><span class="n">2</span><h3>Forecast</h3><p>Demand for each product-week as 600 scenarios, with regional shocks that hit every product in a region together.</p></div>
+        <div class="card step"><span class="n">3</span><h3>Decide</h3><p>A greedy allocator adds stock in steps where expected extra gross profit per rupee is highest, inside the cash budget and the write-off cap.</p></div>
+        <div class="card step"><span class="n">4</span><h3>Watch</h3><p>The release radar compares pickup with forecast and sets how many allotment units to keep at T-14.</p></div>
+      </div>
+      <div class="card"><h2>Assumptions</h2><div class="tbl-wrap"><table class="assume" id="assume"></table></div>
+        <p class="hint" style="margin-top:12px">Not built yet (Round 2): forecasts trained on real booking and search logs, one contract per hotel season with week-level allotment sizes, a stochastic optimiser to compare against the greedy one, and live pickup feeds for the radar.</p></div>
+    </section>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <button class="close" id="drawerClose" aria-label="Close">✕</button>
+  <div id="drawerBody"></div>
+</aside>
+<div class="toast" id="toast"></div>
+<div id="tip" role="tooltip"></div>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

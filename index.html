@@ -3,265 +3,192 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Buy, Block or Pass · Inventory engine prototype for TBO</title>
-<meta name="description" content="Prototype for TBO VoyageHack 4.0: decide, for every hotel-week and flight-week, whether to prepay, hold an allotment, or stay on free sale.">
+<title>Buy, Block or Pass · Inventory engine for TBO</title>
+<meta name="description" content="A 90-second story and a working engine that decides, for every hotel-week and flight-week, whether TBO should prepay, hold an allotment, or stay on free sale. TBO VoyageHack 4.0, IIM Lucknow.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    color-scheme: light;
-    --blue: #237AE3;      /* TBO blue (Block lane) */
-    --blue-ink: #1658A8;
-    --orange: #ED691F;    /* TBO orange (Buy lane) */
-    --pass: #C9CDD3;      /* neutral: no action */
-    --ink: #14181F;
-    --ink-2: #4A5260;
-    --ink-3: #7A8290;
-    --line: #E4E7EC;
-    --bg: #F6F7F9;
-    --card: #FFFFFF;
-    --good: #12805C;
-    --bad: #C2372B;
-    --radius: 10px;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--ink); background: var(--bg); font-size: 14px; line-height: 1.45; }
-  a { color: var(--blue-ink); }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
-  header { background: var(--card); border-bottom: 1px solid var(--line); }
-  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 14px; padding-bottom: 14px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .brand h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
-  .brand h1 .b { color: var(--orange); } .brand h1 .k { color: var(--blue); } .brand h1 .p { color: var(--ink-3); }
-  .brand span { color: var(--ink-2); font-size: 13px; }
-  .badge { font-size: 12px; background: #FFF4EC; color: #9A3F0B; border: 1px solid #F8D3BC; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-  .intro { padding: 18px 0 6px; }
-  .intro p { margin: 0; max-width: 860px; color: var(--ink-2); }
-  .intro strong { color: var(--ink); }
-
-  .controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin: 14px 0; }
-  .ctl { display: flex; flex-direction: column; gap: 6px; }
-  .ctl label { font-size: 12px; color: var(--ink-2); font-weight: 500; }
-  .ctl output { font-weight: 600; color: var(--ink); }
-  input[type=range] { width: 220px; accent-color: var(--blue); }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .seg button { border: 0; background: #fff; padding: 7px 12px; font: inherit; font-size: 13px; color: var(--ink-2); cursor: pointer; border-right: 1px solid var(--line); }
-  .seg button:last-child { border-right: 0; }
-  .seg button[aria-pressed=true] { background: var(--ink); color: #fff; }
-  .status { margin-left: auto; font-size: 12px; color: var(--ink-3); min-height: 18px; }
-
-  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
-  .kpi .lab { font-size: 12px; color: var(--ink-2); }
-  .kpi .val { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; }
-  .kpi .sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
-  .val.neg { color: var(--bad); }
-
-  .grid2 { display: grid; grid-template-columns: 1.05fr 1fr; gap: 12px; margin-top: 12px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
-  .card h2 { font-size: 15px; margin: 0 0 2px; }
-  .card .hint { font-size: 12px; color: var(--ink-3); margin: 0 0 12px; }
-
-  /* comparison bars */
-  .cmp-row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; margin: 8px 0; }
-  .cmp-row .who { font-size: 13px; color: var(--ink-2); }
-  .cmp-metric { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 12px; }
-  .bar-track { position: relative; height: 22px; }
-  .bar-zero { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3); }
-  .bar { position: absolute; top: 3px; height: 16px; border-radius: 4px; }
-  .bar-lab { position: absolute; top: 2px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--ink); }
-
-  /* lane legend */
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-bottom: 10px; }
-  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
-  .lane-buy { background: var(--orange); } .lane-block { background: var(--blue); } .lane-pass { background: var(--pass); }
-
-  /* plan map */
-  .map { display: grid; grid-template-columns: 128px repeat(12, 1fr); gap: 2px; font-size: 11px; }
-  .map .hd { color: var(--ink-3); text-align: center; padding-bottom: 4px; }
-  .map .rl { color: var(--ink-2); padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; }
-  .map .sep { grid-column: 1 / -1; font-size: 11px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 8px 0 2px; }
-  .map .c { height: 20px; border-radius: 3px; cursor: default; position: relative; }
-  .map .c.mix::after { content: ""; position: absolute; right: 2px; top: 2px; width: 5px; height: 5px; border-radius: 50%; background: #fff; opacity: .9; }
-
-  .lanesplit { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; margin: 4px 0 6px; }
-  .lanesplit div { height: 100%; }
-  .split-lab { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; gap: 8px; }
-
-  /* table */
-  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th { font-weight: 600; color: var(--ink-2); font-size: 12px; background: #FAFBFC; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: #fff; }
-  .pill.buy { background: var(--orange); } .pill.block { background: var(--blue); } .pill.pass { background: var(--pass); color: var(--ink); }
-  .tbl-wrap { overflow-x: auto; }
-  .tbl-actions { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
-  .btn { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
-  .btn:hover { border-color: var(--ink-3); }
-  select { font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: #fff; max-width: 100%; }
-
-  /* radar */
-  .radar-note { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
-  .radar-note b { color: var(--ink); }
-
-  /* method */
-  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 4px; }
-  .step { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #FCFCFD; }
-  .step .n { font-size: 11px; color: var(--ink-3); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-  .step h3 { margin: 2px 0 6px; font-size: 14px; }
-  .step p { margin: 0; font-size: 12.5px; color: var(--ink-2); }
-  details { margin-top: 14px; }
-  summary { cursor: pointer; font-weight: 600; font-size: 13px; }
-  .assume td { white-space: normal; vertical-align: top; }
-
-  #tip { position: fixed; pointer-events: none; background: var(--ink); color: #fff; font-size: 12px; padding: 8px 10px; border-radius: 8px; max-width: 320px; z-index: 10; opacity: 0; transition: opacity .08s; line-height: 1.4; }
-  #tip b { color: #fff; }
-  footer { color: var(--ink-3); font-size: 12px; padding: 26px 0 40px; }
-  .busy { opacity: .55; transition: opacity .15s; }
-
-  @media (max-width: 980px) {
-    .kpis { grid-template-columns: repeat(2, 1fr); }
-    .grid2 { grid-template-columns: 1fr; }
-    .steps { grid-template-columns: repeat(2, 1fr); }
-    .status { margin-left: 0; width: 100%; }
-  }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="story.css">
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <div class="brand">
-      <h1><span class="b">Buy</span>, <span class="k">Block</span> <span class="p">or Pass</span></h1>
-      <span>Inventory engine prototype · TBO VoyageHack 4.0 · Team IIM Lucknow</span>
-    </div>
-    <div class="badge">Synthetic data. Every figure is illustrative.</div>
-  </div>
+<header class="top">
+  <a class="brand" href="#s0"><span class="b">Buy</span>, <span class="k">Block</span> <span class="p">or Pass</span></a>
+  <nav>
+    <a href="#s1">Problem</a><a href="#s3">Contracts</a><a href="#s4">Engine</a><a href="#s5">Results</a><a href="#s6">Plan</a>
+    <a class="cta" href="app.html">Open the engine</a>
+  </nav>
+  <div class="progress"><i id="prog"></i></div>
 </header>
 
-<main class="wrap">
-  <section class="intro">
-    <p>For every hotel-week and flight-week in <strong>Summer 2027 (April to June)</strong>, the engine decides whether TBO should
-      <strong style="color:var(--orange)">Buy</strong> (prepay rooms or series seats),
-      <strong style="color:var(--blue-ink)">Block</strong> (hold an allotment it can release 14 days out) or
-      <strong>Pass</strong> (stay on free sale). It weighs 600 demand scenarios per week, including regional shocks, and never lets the bad-quarter write-off go past your limit.
-      The test market here: 10 destinations, 40 hotels and 10 flight routes from India.</p>
-  </section>
+<div class="dots" id="dots" aria-hidden="true"></div>
+<div class="player" id="player">
+  <span class="lbl" id="playLbl">90-second story</span>
+  <button id="playBtn" aria-label="Play the story">▶ Play</button>
+</div>
 
-  <section class="controls" id="controls" aria-label="Plan settings">
-    <div class="ctl">
-      <label for="budget">Cash budget: <output id="budgetOut">₹50 Cr</output></label>
-      <input id="budget" type="range" min="10" max="100" step="5" value="50">
+<main>
+<!-- 0 · hero -->
+<section class="scene hero" id="s0" data-dur="8">
+  <div class="glow g-orange" style="width:520px;height:520px;left:-120px;top:-160px"></div>
+  <div class="glow g-blue" style="width:620px;height:620px;right:-160px;bottom:-220px"></div>
+  <div class="iso"><div class="isogrid" id="heroGrid"></div></div>
+  <div class="hero-fade"></div>
+  <div class="copy">
+    <p class="kicker rv">TBO VoyageHack 4.0 · Inventory Optimization</p>
+    <h1><span class="w w1">Buy,</span> <span class="w w2">Block</span> <span class="w w3">or Pass</span></h1>
+    <p class="lede rv d2">TBO has to decide how much hotel and flight stock to commit to months before travellers book. This engine makes that call for every hotel-week and flight-week of Summer 2027, and shows its working.</p>
+    <div class="ctas rv d3">
+      <button class="btn primary" id="heroPlay">▶ Play the 90-second story</button>
+      <a class="btn ghost" href="app.html">Open the engine →</a>
     </div>
-    <div class="ctl">
-      <label id="riskLab">Risk appetite (max write-off in a 1-in-20 bad quarter)</label>
-      <div class="seg" role="group" aria-labelledby="riskLab" id="risk">
-        <button data-v="cautious" aria-pressed="false">Cautious · 3%</button>
-        <button data-v="balanced" aria-pressed="true">Balanced · 6%</button>
-        <button data-v="bold" aria-pressed="false">Bold · 10%</button>
+    <p class="byline rv d4">Bhumi Khandelwal · Astha Singh · Adarsh Singh, IIM Lucknow · All data on this site is synthetic</p>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</section>
+
+<!-- 1 · problem -->
+<section class="scene" id="s1" data-dur="11">
+  <div class="glow g-orange" style="width:420px;height:420px;right:10%;top:-120px;opacity:.18"></div>
+  <div class="copy">
+    <p class="step rv">01 · The problem</p>
+    <h2 class="rv d1">When a hotel sells out, the booking goes elsewhere</h2>
+    <p class="rv d2">Take one central Dubai hotel over Summer 2027. Demand moves week to week, and the rooms on free sale don’t always keep up. When an agent searches a week that’s already full, TBO has nothing to sell.</p>
+    <div class="bigstat rv d3"><span class="num red" id="lostNum">0</span><span class="unit">room-nights</span><p>of agent demand found no room at this one hotel across 12 weeks.</p></div>
+    <p class="note rv d4">We assume about half of those agents book another hotel on TBO. The other half is business TBO loses, and its search logs already show where it happens.</p>
+  </div>
+  <div class="visual rv d2">
+    <div class="panel">
+      <div class="chartbox" id="soldChart"></div>
+      <div class="legend"><span><i style="background:#3E4B60"></i>Booked through free sale</span><span><i style="background:var(--red)"></i>Demand that found the hotel full</span><span><i style="background:none;border-top:2px dashed #EEF1F5;height:0;width:16px;border-radius:0"></i>Rooms on free sale</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · the trap -->
+<section class="scene" id="s2" data-dur="12">
+  <div class="copy">
+    <p class="step rv">02 · The trap</p>
+    <h2 class="rv d1">Buying rooms early helps, if you buy the right weeks</h2>
+    <p class="rv d2">Hotels give the deepest prepay discounts on weeks they struggle to fill and the smallest on weeks they know will sell out. Prepay the hottest weeks and TBO pays close to full price for rooms it must then sell, whatever happens.</p>
+    <p class="rv d3">In October 2026, Saudi airport attacks and riots in Europe set off waves of cancellations. Rooms prepaid for weeks like those turn into write-offs.</p>
+  </div>
+  <div class="visual rv d2">
+    <div class="panel">
+      <div class="chartbox" id="discChart"></div>
+      <div class="legend"><span><i style="background:var(--orange)"></i>Prepay discount</span><span><i style="background:var(--blue)"></i>Allotment discount</span><span>Average across hotel-weeks in each band</span></div>
+      <div class="shock">
+        <div class="shockrow"><span>Write-off in a 1-in-20 quarter</span><span></span><span></span></div>
+        <div class="shockrow"><span>Prepay the hottest weeks</span><div class="shocktrack"><div class="shockfill" id="shockN" style="background:linear-gradient(90deg,#A63A3D,#F0585C)"></div><div class="wave"></div></div><span class="shockval" id="shockNv">₹0.0 Cr</span></div>
+        <div class="shockrow"><span>Buy, Block or Pass</span><div class="shocktrack"><div class="shockfill" id="shockE" style="background:linear-gradient(90deg,#C2500E,#F59A5E)"></div></div><span class="shockval" id="shockEv">₹0.0 Cr</span></div>
       </div>
     </div>
-    <div class="ctl">
-      <label id="stressLab">Stress test the plan</label>
-      <div class="seg" role="group" aria-labelledby="stressLab" id="stress">
-        <button data-v="" aria-pressed="true">None</button>
-        <button data-v="Europe" aria-pressed="false">Europe unrest</button>
-        <button data-v="Gulf" aria-pressed="false">Gulf disruption</button>
-      </div>
-    </div>
-    <div class="status" id="status" role="status" aria-live="polite"></div>
-  </section>
+  </div>
+</section>
 
-  <section class="kpis" id="kpis" aria-label="Results"></section>
+<!-- 3 · three contracts -->
+<section class="scene cards" id="s3" data-dur="10">
+  <div class="copy">
+    <p class="step rv">03 · The options</p>
+    <h2 class="rv d1">There are three ways to hold a room</h2>
+    <p class="rv d2">The question for each hotel-week and flight-week is which contract to sign, and for how many rooms or seats.</p>
+  </div>
+  <div class="cardrow">
+    <div class="panel ccard rv d2">
+      <span class="tag buy">Buy</span>
+      <div class="mini"><div class="rooms buy"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <svg class="lock" viewBox="0 0 34 40" aria-hidden="true"><path class="shackle" d="M9 18V11a8 8 0 0 1 16 0v7" fill="none" stroke="#F7A574" stroke-width="3.5" stroke-linecap="round"/><rect x="4" y="17" width="26" height="20" rx="5" fill="#F07A35"/></svg></div>
+      <h3>Prepay</h3>
+      <p>The biggest discount, about 10-18%. TBO owns every room, sold or not.</p>
+      <p class="foot">Fits steady weeks and low seasons, when hotels discount hard.</p>
+    </div>
+    <div class="panel ccard rv d3">
+      <span class="tag block">Block</span>
+      <div class="mini"><div class="rooms block"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="back"></i><i class="back"></i><i class="back"></i></div><div class="t14"><b></b></div></div>
+      <h3>Allotment</h3>
+      <p>A smaller discount and a 20% deposit. Fourteen days before arrival, TBO keeps what will sell and hands the rest back.</p>
+      <p class="foot">Fits busy weeks and markets prone to shocks.</p>
+    </div>
+    <div class="panel ccard rv d4">
+      <span class="tag pass">Pass</span>
+      <div class="mini"><div class="pipe"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <h3>Free sale</h3>
+      <p>No commitment and the normal margin, so TBO risks nothing and earns nothing extra.</p>
+      <p class="foot">Fits weeks where demand fades or the upside can’t cover the risk.</p>
+    </div>
+  </div>
+</section>
 
-  <section class="grid2">
-    <div class="card">
-      <h2>Same budget, two ways to spend it</h2>
-      <p class="hint">Our engine vs the intuitive approach: prepay 60% of forecast demand in the hottest, most sold-out weeks until the budget runs out. Extra gross profit is measured against staying on free sale.</p>
-      <div id="compare"></div>
-    </div>
-    <div class="card">
-      <h2>Where the cash goes</h2>
-      <p class="hint">Share of committed cash by lane, and the market logic the engine found.</p>
-      <div id="split"></div>
-      <div id="insights" style="margin-top:12px"></div>
-    </div>
-  </section>
+<!-- 4 · engine -->
+<section class="scene" id="s4" data-dur="19">
+  <div class="glow g-blue" style="width:480px;height:480px;right:5%;top:10%;opacity:.16"></div>
+  <div class="copy">
+    <p class="step rv">04 · The engine</p>
+    <h2 class="rv d1">How the engine makes the call</h2>
+    <ol class="steps rv d2" id="steps">
+      <li data-i="0"><span class="n">1</span><div><h3>Sense</h3><p>Reads what TBO already sees: bookings, searches, sold-out searches, look-to-book, cancellations, plus events, visas and risk news.</p></div><span class="bar"><i></i></span></li>
+      <li data-i="1"><span class="n">2</span><div><h3>Forecast</h3><p>Turns each hotel-week into 600 possible outcomes, with regional shocks that hit a whole region at once.</p></div><span class="bar"><i></i></span></li>
+      <li data-i="2"><span class="n">3</span><div><h3>Decide</h3><p>Adds stock one step at a time where it earns most per rupee, and stops before the bad-quarter write-off crosses the cap.</p></div><span class="bar"><i></i></span></li>
+      <li data-i="3"><span class="n">4</span><div><h3>Watch</h3><p>After signing, tracks pickup and says how many allotment rooms to hand back before each release date.</p></div><span class="bar"><i></i></span></li>
+    </ol>
+  </div>
+  <div class="visual rv d2">
+    <div class="panel"><div class="stage" id="stage">
+      <div data-st="0"><div class="chips" id="chips"></div><div class="core"><b></b></div><p class="stagecap">Signals TBO already holds, plus outside feeds</p></div>
+      <div data-st="1"><canvas id="fan"></canvas><p class="stagecap">Each dot is one possible week of demand for a Dubai hotel (140 of 600 shown)</p></div>
+      <div data-st="2"><div class="sortgrid" id="sortgrid"></div><p class="stagecap">Each square is one product-week, sorted by the decision it gets</p></div>
+      <div data-st="3"><div class="chartbox" id="radarChart"></div><p class="stagecap" id="radarCap"></p></div>
+    </div></div>
+  </div>
+</section>
 
-  <section class="card" style="margin-top:12px">
-    <h2>The plan, week by week</h2>
-    <p class="hint">Colour shows the main decision for each market and week (a hotel row combines its 4 hotels). A white dot means the week mixes a prepaid base with an allotment on top. Hover for details.</p>
-    <div class="legend">
-      <span><i class="lane-buy"></i>Buy: prepay</span>
-      <span><i class="lane-block"></i>Block: allotment, release at T-14</span>
-      <span><i class="lane-pass"></i>Pass: free sale only</span>
+<!-- 5 · results -->
+<section class="scene" id="s5" data-dur="11">
+  <div class="copy">
+    <p class="step rv">05 · The result</p>
+    <h2 class="rv d1">Same ₹50 Cr, very different quarters</h2>
+    <p class="rv d2">We ran our plan and the obvious one, prepaying the hottest and most sold-out weeks, through 600 versions of Summer 2027.</p>
+    <p class="note rv d3">Synthetic market: 10 destinations, 40 hotels and 10 flight routes from India. The pattern held across 5 random seeds. Extra gross profit is measured against staying on free sale.</p>
+  </div>
+  <div class="visual rv d2">
+    <div class="panel res" id="results"></div>
+    <div class="tiles">
+      <div class="panel tile rv d3"><div class="big"><span id="tWo">₹0.0 Cr</span> <span class="vs">vs ₹6.0 Cr</span></div><p>write-off at risk in a 1-in-20 quarter</p></div>
+      <div class="panel tile rv d4"><div class="big"><span id="tRec">0%</span> <span class="vs">vs 19%</span></div><p>of sold-out demand won back</p></div>
     </div>
-    <div class="map" id="map" role="img" aria-label="Plan map of decisions by market and week. The same data is in the table below."></div>
-  </section>
+  </div>
+</section>
 
-  <section class="card" style="margin-top:12px">
-    <div class="tbl-actions">
-      <div>
-        <h2 style="margin:0">Negotiation brief for the contracting team</h2>
-        <p class="hint" style="margin:2px 0 0">Ranked by expected extra gross profit. Sign-by dates allow 75 days for hotel prepay, 60 for hotel allotments and 75-90 for series seats.</p>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" id="toggleAll">Show all rows</button>
-        <button class="btn" id="csv">Download plan (CSV)</button>
-      </div>
+<!-- 6 · plan -->
+<section class="scene" id="s6" data-dur="12">
+  <div class="copy">
+    <p class="step rv">06 · The plan</p>
+    <h2 class="rv d1">What the plan looks like</h2>
+    <p class="rv d2">One row per market, one column per week of Summer 2027. The engine found three patterns on its own.</p>
+    <div class="callouts rv d3" id="callouts">
+      <div class="callout" data-row="Maldives"><span class="tag buy">Buy</span><p><b>Maldives in monsoon season.</b> Resorts discount hard for prepayment, so the engine prepays.</p></div>
+      <div class="callout" data-row="London,Paris"><span class="tag block">Block</span><p><b>London and Paris in summer.</b> Strong demand, but unrest risk, so it keeps the right to hand rooms back.</p></div>
+      <div class="callout" data-row="Makkah,DEL-JED,BOM-JED"><span class="tag pass">Pass</span><p><b>Makkah during the Umrah pause.</b> Demand drops away, so it stays on free sale.</p></div>
     </div>
-    <div class="tbl-wrap"><table id="tbl"></table></div>
-  </section>
+  </div>
+  <div class="visual rv d2"><div class="panel"><div class="plan" id="planGrid"></div>
+    <div class="legend"><span><i style="background:var(--orange)"></i>Buy</span><span><i style="background:var(--blue)"></i>Block</span><span><i style="background:#2A313D;border:1px solid #4E5766"></i>Pass</span></div></div></div>
+</section>
 
-  <section class="grid2">
-    <div class="card">
-      <h2>Release radar</h2>
-      <p class="hint">After signing, the engine watches pickup against forecast and tells ops how many allotment rooms to keep or hand back at T-14.</p>
-      <select id="radarSel" aria-label="Choose an allotment to inspect"></select>
-      <div id="radar" style="margin-top:10px"></div>
-      <div class="radar-note" id="radarNote"></div>
-    </div>
-    <div class="card">
-      <h2>Signals feeding the forecast</h2>
-      <p class="hint">In production these come from TBO's own data plus outside feeds. Here they shape the synthetic demand.</p>
-      <div id="signals"></div>
-    </div>
-  </section>
-
-  <section class="card" style="margin-top:12px">
-    <h2>How it works</h2>
-    <div class="steps">
-      <div class="step"><div class="n">1 · Sense</div><h3>Read demand TBO already sees</h3><p>Bookings, searches, sold-out searches (unmet demand), look-to-book by market, cancellations, plus events, visas, airfares and risk news.</p></div>
-      <div class="step"><div class="n">2 · Forecast</div><h3>Ranges, not one number</h3><p>Demand for each product-week as a spread of outcomes, with regional shocks that hit all of a region's products at once.</p></div>
-      <div class="step"><div class="n">3 · Decide</div><h3>Buy, Block or Pass</h3><p>Adds inventory step by step where it earns the most per rupee, inside the cash budget and the write-off cap. Sets the sign-by date and agent price.</p></div>
-      <div class="step"><div class="n">4 · Watch</div><h3>Release radar</h3><p>Tracks pickup after signing and flags how many allotment rooms to keep or hand back before each release date.</p></div>
-    </div>
-    <details>
-      <summary>Assumptions and limits (please read)</summary>
-      <table class="assume" style="margin-top:10px">
-        <tr><th>Item</th><th>Value used</th><th>Basis</th></tr>
-        <tr><td>Data</td><td>Fully synthetic: 600 product-weeks, 600 scenarios each, fixed random seed</td><td>No TBO data used. Built to show the method, not to forecast TBO's results.</td></tr>
-        <tr><td>Free-sale margin</td><td>8% hotels, 1.2% air</td><td>Hotel take rates of ~8% in TBO's Q1 FY27 shareholder letter; air gross profit guided at 1-1.2% on the Q2 FY27 call.</td></tr>
-        <tr><td>Prepay discount</td><td>10-18% hotels, 8-14% series seats, smaller in peak weeks</td><td>Public ranges for hard allotments (10-25% below rack). Hotels discount least on dates they expect to fill.</td></tr>
-        <tr><td>Allotment rate</td><td>4-8% below free sale, ±5 pts with season</td><td>The contracted rate is fixed; free-sale prices rise in peak weeks and fall in low season.</td></tr>
-        <tr><td>Release and attrition</td><td>Release at T-14; must keep at least 30% (hotels) / 40% (seats)</td><td>Common release structures are 30/21/14/7 days; attrition clauses vary.</td></tr>
-        <tr><td>Unsold prepaid stock</td><td>Recover 30% (hotels) / 15% (seats) through last-minute sales</td><td>Assumption. Change it in engine.js to test sensitivity.</td></tr>
-        <tr><td>Saving passed to agents</td><td>60%</td><td>Own stock must undercut other wholesalers selling the same hotel.</td></tr>
-        <tr><td>Sold-out demand</td><td>Half is truly lost; the other half books an alternative on TBO</td><td>Assumption. Only the truly lost half counts as upside.</td></tr>
-        <tr><td>Shocks (per quarter)</td><td>Europe 15% chance, demand ×0.50 · Gulf 12%, ×0.55 · APAC 6%, ×0.75</td><td>Set to echo the October 2026 Saudi and Europe cancellations TBO reported.</td></tr>
-        <tr><td>Contract cost</td><td>₹15k per hotel-week, ₹40k per route-week</td><td>Contracting, loading and reconciliation effort.</td></tr>
-      </table>
-      <p class="hint" style="margin-top:10px">Not built yet (Round 2 scope): forecasts trained on real booking and search logs, multi-week hotel contracts negotiated as one deal, agent-level demand, and live pickup feeds for the release radar.</p>
-    </details>
-  </section>
-
-  <footer>
-    Built by Bhumi Khandelwal, Astha Singh and Adarsh Singh (IIM Lucknow) for TBO VoyageHack 4.0. Not affiliated with or endorsed by TBO.
-    Code: <a href="https://github.com/Adarshdgr8/buy-block-pass">github.com/Adarshdgr8/buy-block-pass</a>
-  </footer>
+<!-- 7 · cta -->
+<section class="scene final" id="s7" data-dur="7">
+  <div class="glow g-orange" style="width:520px;height:520px;left:10%;top:20%;opacity:.2"></div>
+  <div class="glow g-blue" style="width:520px;height:520px;right:10%;top:10%;opacity:.2"></div>
+  <div class="copy">
+    <p class="step rv">07 · Try it</p>
+    <h2 class="rv d1">Run it yourself</h2>
+    <p class="lede rv d2" style="margin:0 auto">Change the budget, set the risk appetite, hit the plan with a Gulf or Europe shock, and draft the hotel contracts it recommends.</p>
+    <div class="ctas rv d3"><a class="btn primary" href="app.html">Open the engine →</a><a class="btn ghost" href="https://github.com/Adarshdgr8/buy-block-pass">Code and every assumption</a></div>
+    <div class="team rv d4"><span>Bhumi Khandelwal</span><span>Astha Singh</span><span>Adarsh Singh</span><span>IIM Lucknow</span></div>
+    <p class="note rv d5" style="margin-top:18px">Built for TBO VoyageHack 4.0. Not affiliated with or endorsed by TBO. All data is synthetic.</p>
+  </div>
+</section>
 </main>
-<div id="tip" role="tooltip"></div>
-<script src="engine.js"></script>
-<script src="app.js"></script>
+
+<script src="story-data.js"></script>
+<script src="story.js"></script>
 </body>
 </html>
