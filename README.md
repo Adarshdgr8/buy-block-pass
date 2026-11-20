@@ -97,6 +97,9 @@ node -e "const B=require('./engine.js');const w=B.buildWorld(42);const r=B.optim
 - `worker.js`: runs the engine off the main thread and reports progress
 - `app.html`, `app.js`, `app.css`: the engine's interface
 - `index.html`, `story.js`, `story.css`: the animated story
+- `fx3d.js`: WebGL scenes for the story (dotted globe with flight arcs, 3D demand skyline)
+- `motion.js`: scroll and text motion (GSAP ScrollTrigger and SplitText, Lenis smooth scroll)
+- `vendor/`: bundled libraries and globe land points, so the site needs no CDN
 - `story-data.js`: numbers for the story, generated from `engine.js` by `node tools/make-story-data.js` (seed 42, ₹50 Cr, Balanced)
 
 ## Roadmap (Round 2)
@@ -105,6 +108,13 @@ node -e "const B=require('./engine.js');const w=B.buildWorld(42);const r=B.optim
 - Treat a hotel's season as one contract with week-level allotment sizes
 - Replace the greedy allocator with a stochastic program (e.g. OR-Tools) and compare
 - Feed live pickup into the release radar; push at-risk allotment stock to the agents most likely to sell it
+
+## Credits
+
+- [three.js](https://threejs.org) (MIT)
+- [GSAP](https://gsap.com) with ScrollTrigger and SplitText (GSAP Standard no-charge licence)
+- [Lenis](https://lenis.darkroom.engineering) (MIT)
+- Land outlines from Natural Earth via [world-atlas](https://github.com/topojson/world-atlas) (public domain)
 
 ## Licence
 

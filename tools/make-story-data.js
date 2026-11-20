@@ -22,7 +22,14 @@ const dm=B.demandFor(w,blk.cell,null); const idx=Array.from(dm.D.keys()).sort((a
 const Ds=Array.from(dm.D).sort((a,b)=>a-b); const med=Ds[Math.floor(0.5*Ds.length)];
 const proj=dm.Dh[s]; const ec=blk.cell.prod.econ; const keep=Math.min(blk.K,Math.max(ec.attritionFloor*blk.K,proj-blk.H));
 const release={name:blk.cell.prod.name,week:B.fmt(blk.cell.week),H:blk.H,K:blk.K,med:Math.round(med),proj:Math.round(proj),keep:Math.round(keep),rel:Math.round(blk.K-keep),relDate:B.fmt(B.addDays(blk.cell.week,-14)),p10:Math.round(Ds[60]),p90:Math.round(Ds[540])};
-const data={weeks:B.WEEKS.map(B.fmt),rows,sold,hotelName:hotel.name,fan,bands,release,
+// skyline: cash committed per row-week (₹ lakh), same grouping as rows
+const groupOf=p=>p.cell.prod.kind==='hotel'?p.cell.prod.dest.name:p.cell.prod.id;
+rows.forEach(row=>{row.cash=Array.from({length:12},(_,wk)=>Math.round(r.plan.filter(p=>groupOf(p)===row.name&&p.cell.w===wk).reduce((a,p)=>a+p.capital,0)/1e5*10)/10);});
+// globe arcs: each flight route's dominant lane over the summer, plus hotel-only markets
+const dom=lanes=>{const c={buy:0,block:0,pass:0};lanes.forEach(l=>c[l]++);return Object.keys(c).sort((a,b)=>c[b]-c[a])[0];};
+const arcs=B.ROUTES.map(rt=>({id:rt.id,from:rt.id.split('-')[0],to:rt.dest,lane:dom(rows.find(x=>x.name===rt.id).lanes)}));
+['DPS','IST'].forEach(id=>{const d=B.DEST.find(x=>x.id===id);arcs.push({id:'DEL-'+id,from:'DEL',to:id,lane:dom(rows.find(x=>x.name===d.name).lanes)});});
+const data={weeks:B.WEEKS.map(B.fmt),rows,arcs,sold,hotelName:hotel.name,fan,bands,release,
  res:{exp:cr(r.expProfit),p5:cr(r.p5),wo:cr(r.wo95),rec:Math.round(r.recovered*100),gulf:cr(g.expProfit),eu:cr(e.expProfit),cap:cr(r.capital),buyCap:cr(r.lanes.buy.cap),blockCap:cr(r.lanes.block.cap)},
  naive:{exp:cr(n.expProfit),p5:cr(n.p5),wo:cr(n.wo95),rec:Math.round(n.recovered*100),gulf:cr(gn.expProfit),eu:cr(en.expProfit)}};
 require('fs').writeFileSync(require('path').join(__dirname,'..','story-data.js'),'/* Precomputed from engine.js (seed 42, ₹50 Cr, Balanced). Regenerate with: node tools/make-story-data.js. */\nwindow.STORY='+JSON.stringify(data)+';\n');

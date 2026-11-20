@@ -266,6 +266,7 @@
       const rows = i < 0 ? null : callouts[i].dataset.row.split(',');
       $$('#planGrid i').forEach(el => el.classList.toggle('dimmed', !!rows && !rows.includes(el.dataset.row)));
       $$('#planGrid .rl').forEach(el => el.classList.toggle('hl', !!rows && rows.includes(el.dataset.row)));
+      if (window.FXSKY) window.FXSKY.highlight(rows);
     }
     callouts.forEach((c, i) => c.addEventListener('click', () => { clearScene('s6'); focus(i); }));
     function run(scene) { focus(-1); let i = -1; later(scene, 1800, () => { i = 0; focus(0); every(scene, 3200, () => { i = (i + 1) % 3; focus(i); }); }); }
@@ -279,13 +280,13 @@
     s2: id => disc.draw(id),
     s4: () => engine.start(),
     s5: id => results.run(id),
-    s6: id => plan.run(id)
+    s6: id => { window.__s6in = true; if (window.FXSKY) window.FXSKY.play(); plan.run(id); }
   };
   const active = new Set();
   const io = new IntersectionObserver(entries => entries.forEach(e => {
     const id = e.target.id;
     if (e.intersectionRatio >= 0.35 && !active.has(id)) { active.add(id); e.target.classList.add('in'); enter[id] && enter[id](id); }
-    else if (!e.isIntersecting && active.has(id)) { active.delete(id); e.target.classList.remove('in'); clearScene(id); if (id === 's4') engine.stop(); }
+    else if (!e.isIntersecting && active.has(id)) { active.delete(id); e.target.classList.remove('in'); clearScene(id); if (id === 's4') engine.stop(); if (id === 's6') { window.__s6in = false; if (window.FXSKY) window.FXSKY.stop(); } }
   }), { threshold: [0, 0.35, 0.6] });
   scenes.forEach(s => io.observe(s));
 
@@ -308,7 +309,7 @@
   const names = ['Intro', 'The problem', 'The trap', 'The options', 'The engine', 'The result', 'The plan', 'Try it'];
   let playing = false, idx = 0, sceneStart = 0, raf = null;
   const btn = $('#playBtn'), lbl = $('#playLbl');
-  function goTo(i) { scenes[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
+  function goTo(i) { if (window.LENIS) window.LENIS.scrollTo(scenes[i], { duration: reduced ? 0 : 1.6 }); else scenes[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
   function tick(now) {
     if (!playing) return;
     const el = now - sceneStart, done = durs.slice(0, idx).reduce((a, b) => a + b, 0);

@@ -16,6 +16,9 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, "Segoe UI", system-ui, sans-serif; font-size: 17px; line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 h1, h2, h3 { font-family: "Space Grotesk", Inter, system-ui, sans-serif; margin: 0; letter-spacing: -0.02em; }
 a { color: inherit; }
@@ -240,3 +243,33 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .rv, .hero h1 .w, .isogrid i, .plan i { opacity: 1 !important; transform: none !important; }
 }
+
+/* ---------- WebGL + motion layer ---------- */
+.globewrap { position: absolute; right: -4vw; top: 50%; transform: translateY(-50%); width: min(64vw, 980px); height: min(64vw, 980px); z-index: 1; display: none; }
+.globewrap canvas { width: 100%; height: 100%; display: block; }
+body.webgl .globewrap { display: block; }
+body.webgl .iso { display: none; }
+body.webgl .hero-fade { background: linear-gradient(90deg, var(--bg) 30%, rgba(9,13,20,.55) 50%, rgba(9,13,20,0) 70%); }
+.geo-layer { position: absolute; inset: 0; pointer-events: none; }
+.geo-tag { position: absolute; left: 0; top: 0; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: #C9D3E2; padding: 2px 7px; margin: -26px 0 0 8px; border-radius: 6px; background: rgba(9,13,20,.55); border: 1px solid rgba(255,255,255,.08); white-space: nowrap; transition: opacity .4s; opacity: 0; }
+.geo-tag.origin { color: #fff; background: rgba(240,122,53,.25); border-color: rgba(240,122,53,.4); }
+.arclegend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.arclegend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 7px; vertical-align: 3px; box-shadow: 0 0 10px currentColor; }
+.arclegend .muted { color: var(--dim); }
+.skywrap { position: relative; height: 470px; display: none; }
+body.webgl .skywrap { display: block; }
+body.webgl #planGrid { display: none; }
+.skywrap canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+.sky-layer { position: absolute; inset: 0; pointer-events: none; }
+.sky-tag { position: absolute; left: 0; top: 0; font-size: 12px; font-weight: 700; color: #fff; background: rgba(9,13,20,.7); border: 1px solid rgba(255,255,255,.15); padding: 3px 8px; border-radius: 6px; white-space: nowrap; transition: opacity .35s; opacity: 0; }
+.sky-tip { position: absolute; left: 0; top: 0; pointer-events: none; font-size: 12px; background: #EEF1F5; color: #0A0E15; padding: 7px 10px; border-radius: 8px; opacity: 0; transition: opacity .12s; white-space: nowrap; z-index: 3; }
+.skycap { position: absolute; left: 0; bottom: 0; margin: 0; font-size: 12px; color: var(--dim); }
+.bignum { position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: clamp(220px, 34vw, 560px); line-height: .8; color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.07); pointer-events: none; z-index: 0; letter-spacing: -0.06em; user-select: none; }
+.scene h2 { perspective: 600px; }
+.scene h2 .sw { display: inline-block; white-space: nowrap; }
+.scene h2 .sc { display: inline-block; transform-origin: 50% 100%; will-change: transform; }
+.spot { position: fixed; left: 0; top: 0; width: 640px; height: 640px; margin: -320px 0 0 -320px; border-radius: 50%; pointer-events: none; z-index: 1; background: radial-gradient(circle, rgba(74,147,240,.09), rgba(240,122,53,.04) 40%, transparent 65%); mix-blend-mode: screen; }
+.ribbon { position: relative; z-index: 3; overflow: hidden; transform: rotate(-2.2deg) scale(1.04); background: linear-gradient(90deg, #ED691F, #F59A5E 40%, #4A93F0 75%, #237AE3); padding: 14px 0; box-shadow: 0 20px 60px rgba(0,0,0,.45); margin: -20px 0; }
+.ribbon .track { display: flex; width: max-content; }
+.ribbon span { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .06em; color: #0A0E15; white-space: nowrap; padding-right: 0; }
+@media (max-width: 900px) { .globewrap { width: 120vw; height: 120vw; right: -40vw; opacity: .55; } .skywrap { height: 360px; } .bignum { display: none; } }
